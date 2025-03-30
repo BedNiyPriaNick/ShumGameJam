@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class PlayerMovment : MonoBehaviour
 {
-    [SerializeField] private float speed;
+    [SerializeField] private float startSpeed;
+    private float currentSpeed;
 
     [SerializeField] private float punchStartCooldown;
     private float punchCooldown;
@@ -12,7 +13,8 @@ public class PlayerMovment : MonoBehaviour
 
     [SerializeField] private float invisibilityStartCooldown;
     private float invisibilityCooldown;
-    private bool invisibility = false;
+
+    [SerializeField] private GameObject deathScreen;
 
     [SerializeField] private Animator fistAnim;
 
@@ -26,6 +28,7 @@ public class PlayerMovment : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        currentSpeed = startSpeed;
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         main = Camera.main;
@@ -37,11 +40,6 @@ public class PlayerMovment : MonoBehaviour
     {
         if (punchCooldown > 0) { punchCooldown -= Time.deltaTime; }
         if (invisibilityCooldown > 0) { invisibilityCooldown -= Time.deltaTime; }
-        while (invisibility == true)
-        {
-            speed = 0;
-            punch = false;
-        }
         Movement();
         Punching();
         Invisibility();
@@ -64,7 +62,7 @@ public class PlayerMovment : MonoBehaviour
         {
             anim.SetFloat("moveVector", 0);
         }
-        rb.velocity = new Vector2(moveVector.x * speed, moveVector.y * speed);
+        rb.velocity = new Vector2(moveVector.x * currentSpeed, moveVector.y * currentSpeed);
     }
 
     void Punching()
@@ -84,21 +82,22 @@ public class PlayerMovment : MonoBehaviour
     {
         punch = false;
     }
-    public void SetInvisibility()
+    private void SetInvisibility()
     {
         anim.SetBool("IsInvisible", false);
-        invisibility = false;
         invisibilityCooldown = invisibilityStartCooldown;
+        currentSpeed = startSpeed;
+        Debug.Log("Перезарядка невидимість");
     }
 
     void Invisibility()
     {
         if (Input.GetKeyDown(KeyCode.Space) && invisibilityCooldown <= 0)
         {
-            invisibility = true;
-            anim.SetBool("Invisible", true);
+            punchCooldown = punchStartCooldown;
+            currentSpeed = startSpeed * 0.1f;
+            anim.SetBool("IsInvisible", true);
             Invoke("SetInvisibility", 10f);
-            Debug.Log("Перезарядка невидимість");
         }
     }
 
@@ -109,5 +108,10 @@ public class PlayerMovment : MonoBehaviour
             Destroy(collision.gameObject);
             Debug.Log("Врага ліквідовано");
         }
+    }
+
+    private void OnDisable()
+    {
+        deathScreen.SetActive(true);
     }
 }
